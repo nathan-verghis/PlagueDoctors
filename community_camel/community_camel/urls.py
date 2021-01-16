@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.conf.urls import url
 
-from .views import *
+from .views import AccountsView, OrderItemView, OrderListView, PingView, SignupView
 
 urlpatterns = [
     url('admin/', admin.site.urls),

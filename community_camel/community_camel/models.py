@@ -8,7 +8,7 @@ class Accounts(models.Model):
     lastName = models.SlugField()
     dob = models.DateField()
     address = models.SlugField()
-    suit = models.SlugField()
+    suite = models.SlugField()
     city = models.SlugField()
     province = models.SlugField()
     country = models.SlugField()
