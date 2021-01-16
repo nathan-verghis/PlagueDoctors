@@ -195,6 +195,12 @@ input, select, textarea {
 			position: relative;
 			padding-bottom: 0.35em;
 		}
+		h1.majorSignUp {
+			margin: 0 0 1.3em 0;
+			position: relative;
+			padding-bottom: 0.35em;
+			text-align: center;
+		}
 
 			h1.major:after {
 				background-image: -moz-linear-gradient(to right, #5e42a6, #b74e91);
