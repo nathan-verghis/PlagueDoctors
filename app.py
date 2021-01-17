@@ -36,30 +36,27 @@ def index(name = None):
 @app.route('/signup', methods = ['POST'])
 def createacc():
 	if request.method == 'POST':
-		try:
-			req = request.get_json(force = True)
-			emailId  = req[2]['value']
-			passWd = req[4]['value']
-			phoneNum = req[3]['value']
-			firstN = req[0]['value']
-			lastN = req[1]['value']
-			stAdd = req[6]['value']
-			suiteNum = req[7]['value']
-			city = req[8]['value']
-			prov = req[9]['value']
-			country = req[10]['value']
-			cardnum = int(req[11]['value'])
-			ccv = int(req[14]['value'])
-			cardexM = int(req[12]['value'])
-			cardExY = int(req[13]['value'])
-			accType = req[15]['value']
-			confirmPass = req[5]['value']
-		except (Exception):
-			return {'Type': "Error", 'content' : 'Please fill in all the forms'}
-		address = stAdd + ", " + suiteNum + ", " + city + ", " + prov + ", " + country
+		req = request.get_json(force = True)
+		emailId  = req[2]['value']
+		passWd = req[4]['value']
+		phoneNum = req[3]['value']
+		firstN = req[0]['value']
+		lastN = req[1]['value']
+		stAdd = req[6]['value']
+		suiteNum = req[7]['value']
+		city = req[8]['value']
+		prov = req[9]['value']
+		country = req[10]['value']
+		cardnum = req[11]['value']
+		ccv = req[14]['value']
+		cardexM = req[12]['value']
+		cardExY = req[13]['value']
+		accType = req[15]['value']
+		confirmPass = req[5]['value']
+		address = stAdd + " " + suiteNum + " " + city + " " + prov + " " + country
 		conn = get_db()
 		result = 0
-		if ccv < 100 or ccv > 999:
+		if int(ccv) < 100 or int(ccv) > 999:
 			status = {'Type': "Error", 'content' : 'Invalid CCV'}
 			return status
 		if not phoneNum.isnumeric() or len(phoneNum) != 10:
@@ -75,9 +72,8 @@ def createacc():
 		cur.execute("SELECT * from Accounts WHERE emailId = %s", [emailId])
 		result = len(cur.fetchall())
 		if result == 0:
-			cur.execute("INSERT INTO Accounts (emailId, pass, phoneNum, firstName, lastName, Address, cardNum, ccv, cardExpMon, cardExpYr, accType, city, province, country) VALUES (%s, %s, %s, %s, %s, %s, %d, %d, %d, %d, %s, %s, %s, %s)")
+			cur.execute("INSERT INTO Accounts (emailid, pass, phonenum, firstname, lastname, cardnum, ccv, cardexpmon, cardexpyr, acctype, city, country, province, address) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", [emailId, passWd, phoneNum, firstN, lastN, cardnum, ccv, cardexM, cardExY, accType, city, country, prov, address])
 		conn.commit()
-		print(cur.statusmessage)
 		status = {'Type' : "SQL" , 'content' : cur.statusmessage}
 		return status
 
@@ -105,5 +101,4 @@ def createorder():
 		cur.execute("INSERT INTO orderList (orderno, numitems, status, type, donation, orderadd, city, emailid, province, country) VALUES (%d, %d, %s, %s, %d, %s, %s, %s, %s)")
 		result = 0
 
-'''notes: if we can't figure out google API we can sort by orders in the same city province country of the user
-'''
+'''notes: if we can't figure out google API we can sort by orders in the same city province country of the user'''

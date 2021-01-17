@@ -10,7 +10,7 @@ $(document).ready(function(){
 				alert(status);
 				alert(error);
 			},
-			async:true,
+			async:false,
 			success:function(data){
 				if(data.Type == "SQL"){
 					//need to load new page on success
