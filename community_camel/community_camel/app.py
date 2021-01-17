@@ -28,9 +28,10 @@ def index(name = None):
 		cur.execute("SELECT * FROM defaultdb.INFORMATION_SCHEMA.tables where table_TYPE = 'BASE TABLE';")
 		print(cur.statusmessage)
 	#CHANGE THIS BACK TO INDEX LATER
-	return render_template('signup.html', name = name);
+	return render_template('index.html', name = name)
 
 @app.route('/login', methods = ['POST'])
+def login():
 	conn = get_db()
 	req = request.get_json(force = True)
 	cur = conn.cursor()
@@ -48,6 +49,7 @@ def index(name = None):
 	return jsonify(status)
 
 @app.route('/logout', methods = ['POST'])
+def logout():
 	session.pop('emailId', None)
 	session['logged_in'] = False
 	return redirect(url_for('index', name = None))
@@ -83,7 +85,7 @@ def createacc():
 		if isnumeric(phoneNum) and len(phoneNum != 10) == False:
 			status = dict({'Type': "Error", 'content' : 'Invalid phone number format'})
 			return status
-		if (len(emailId) == 0 or len(passWd) == 0 or len(firstN) == 0 or len(lastN) == 0 or len(stAdd) == 0 or len(city) == 0)
+		if (len(emailId) == 0 or len(passWd) == 0 or len(firstN) == 0 or len(lastN) == 0 or len(stAdd) == 0 or len(city) == 0):
 			status = dict({'Type': "Error", 'content' : 'Please fill in all the forms'})
 			return status
 		if conpass != passWd:
@@ -123,14 +125,14 @@ def createorder():
 		province = cur.fetchone()
 		cur.execute("SELECT country FROM Accounts WHERE emailId = %s", [emailId])
 		country = cur.fetchone()
-		cur.execute("INSERT INTO orderList (numitems, status, type, donation, orderadd, city, emailid, province, country) VALUES (%d, %s, %s, %d, %s, %s, %s, %s) RETURNING orderId")
+		cur.execute("INSERT INTO orderList (numitems, status, type, donation, orderadd, city, emailid, province, country) VALUES (%d, %s, %s, %d, %s, %s, %s, %s) RETURNING orderId", [numitems, status, orderType, donation, orderadd, city, emailId, province, country])
 		conn.commit()
 		orderno = cur.fetchone()
 		for i in numitems:
 			itemname = i.itemName
 			itemquant = i.itemQ
 			itemStatus = "NEW"
-			cur.execute("INSERT INTO orderItem (orderNumber, itemName, quantity, itemStatus, cost) VALUES (%d, %d, %s, %d, %s, 0.0)")
+			cur.execute("INSERT INTO orderItem (orderNumber, itemName, quantity, itemStatus, cost) VALUES (%d, %d, %s, %d, %s, 0.0)", [orderno, itemname, itemquant, itemStatus])
 		status = {"status" : cur.statusmessage}
 		return status
 
@@ -150,9 +152,9 @@ def getuserorders():
 		orderListInfo = []
 		count = 0
 		for i in cur.fetchall():
-			statnew.execute("SELECT * FROM orderItem WHERE orderID = %s AND itemStatus = %s" [i, "NEW"])
-			statpen.execute("SELECT * FROM orderItem WHERE orderID = %s AND itemStatus = %s" [i, "PENDING"])
-			statcl.execute("SELECT * FROM orderItem WHERE orderID = %s AND itemStatus = %s" [i, "CLOSED"])
+			statnew.execute("SELECT * FROM orderItem WHERE orderID = %s AND itemStatus = %s", [i, "NEW"])
+			statpen.execute("SELECT * FROM orderItem WHERE orderID = %s AND itemStatus = %s", [i, "PENDING"])
+			statcl.execute("SELECT * FROM orderItem WHERE orderID = %s AND itemStatus = %s", [i, "CLOSED"])
 			orderListInfo.append([])
 			orderListInfo[count].append([i[0]])
 			orderListInfo[count].append(len(statnew.fetchall()))
@@ -162,7 +164,7 @@ def getuserorders():
 		return orderListInfo
 
 @app.route('/user-get-my-orders-closed', methods = ['GET'])
-def getuserorders():
+def getuserordersclosed():
 	if request.method == 'GET':
 		print("GOT TO ORDER LIST FOR USER")
 		emailId  = session['emailId']
@@ -175,7 +177,7 @@ def getuserorders():
 		lenght = 0
 		for i in cur.fetchall():
 			orderListInfo.append([])
-			statcl.execute("SELECT * FROM orderItem WHERE orderID = %s AND itemStatus = %s" [i, "CLOSED"])
+			statcl.execute("SELECT * FROM orderItem WHERE orderID = %s AND itemStatus = %s", [i, "CLOSED"])
 			orderListInfo[length].append([i[0]])
 			orderListInfo[length].append(len(statnew.fetchall()))
 			orderListInfo[length].append(len(statpen.fetchall()))
@@ -189,19 +191,19 @@ def getcost(orderNum):
 	conn = get_db()
 	cur = conn.cursor()
 	cost = 0.0
-	cur.execute("SELECT cost FROM orderItem WHERE orderID = %s AND itemStatus = %s" [orderId, "CLOSED"])
+	cur.execute("SELECT cost FROM orderItem WHERE orderID = %s AND itemStatus = %s", [orderId, "CLOSED"])
 	for i in cur.fetchall():
 		cost += i[0]
 	return cost
 
 @app.route('/user-get-order-details', methods = ['POST'])
-def getorderinfo
-	if request.method == 'POST'
+def getorderinfo():
+	if request.method == 'POST':
 		print("GOT TO ORDER INFO")
 		conn = get_db()
 		cur = conn.cursor()
 		orderId = req['orderId']
-		cur.execute("SELECT * FROM orderItem WHERE orderID = %s" [orderId])
+		cur.execute("SELECT * FROM orderItem WHERE orderID = %s", [orderId])
 		orderInfo = []
 		length = 0
 		for i in cur.fetchall():
@@ -214,6 +216,7 @@ def getorderinfo
 		return orderInfo
 
 @app.route('/driver-get-nearby-orders', methods = ['GET'])
+def nearbyorders():
 	if request.method == 'GET':
 		print("GOT TO ORDER LIST FOR DRIVER")
 		emailId  = session['emailId']
@@ -230,7 +233,7 @@ def getorderinfo
 		orderListInfo = []
 		count = 0
 		for i in cur.fetchall():
-			statnew.execute("SELECT itemName, quantity FROM orderItem WHERE orderID = %s AND itemStatus = %s" [i, "NEW"])
+			statnew.execute("SELECT itemName, quantity FROM orderItem WHERE orderID = %s AND itemStatus = %s", [i, "NEW"])
 			orderListInfo.append([])
 			orderListInfo[count].append([i[0]])
 			orderListInfo[count].append([i[1]])
@@ -240,6 +243,7 @@ def getorderinfo
 		return orderListInfo
 
 @app.route('/driver-active-orders', methods = ['GET'])
+def driveractiveorders():
 	if request.method == 'GET':
 		print("GOT TO ORDER LIST FOR DRIVER")
 		emailId  = session['emailId']
@@ -269,28 +273,30 @@ def getorderinfo
 		return orderListInfo
 
 @app.route('/driver-add-order', methods = ['POST'])
-if request.method = 'POST':
-	emailId = session['emailId']
-	conn = get_db()
-	cur = conn.cursor()
-	orderName = req['orderName']
-	itemName = req['itemName']
-	cur.execute("SELECT id FROM orderItem WHERE orderNumber = %s AND itemName = %s", [orderNum, itemName])
-	data = cur.fetchall()
-	for i in data:
-		cur.execute("UPDATE itemList SET driverEmail = %s AND status = %s WHERE id = %s", [emailId, "PENDING", i[0])
+def driveraddorder():
+	if request.method == 'POST':
+		emailId = session['emailId']
+		conn = get_db()
+		cur = conn.cursor()
+		orderName = req['orderName']
+		itemName = req['itemName']
+		cur.execute("SELECT id FROM orderItem WHERE orderNumber = %s AND itemName = %s", [orderNum, itemName])
+		data = cur.fetchall()
+		for i in data:
+			cur.execute("UPDATE itemList SET driverEmail = %s AND status = %s WHERE id = %s", [emailId, "PENDING", i[0]])
 
 @app.route('/driver-delivery', methods = ['POST'])
-if request.method = 'POST':
-	emailId = session['emailId']
-	conn = get_db()
-	cur = conn.cursor()
-	orderName = req['orderName']
-	itemName = req['itemName']
-	cur.execute("SELECT id FROM orderItem WHERE orderNumber = %s AND itemName = %s", [orderNum, itemName])
-	data = cur.fetchall()
-	for i in data:
-		cur.execute("UPDATE itemList SET status = %s WHERE id = %s", ["CLOSED", i[0])
+def driverdelivery():
+	if request.method == 'POST':
+		emailId  = session['emailId']
+		conn = get_db()
+		cur = conn.cursor()
+		orderName = req['orderName']
+		itemName = req['itemName']
+		cur.execute("SELECT id FROM orderItem WHERE orderNumber = %s AND itemName = %s", [orderNum, itemName])
+		data = cur.fetchall()
+		for i in data:
+			cur.execute("UPDATE itemList SET status = %s WHERE id = %s", ["CLOSED", i[0]])
 
 
 
