@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
 import psycopg2
-from flask import Flask, render_template
+from flask import Flask, render_template, flash
 import requests
 import json
 import os
@@ -8,6 +8,7 @@ from os import path
 from flask import jsonify
 from flask import session, redirect, url_for
 from flask import request
+from flask_cors import CORS
 
 def get_db():
 	#parser = ArgumentParser(description = __doc__, formatter_class=RawTextHelpFormatter)
@@ -18,7 +19,10 @@ def get_db():
 	conn = psycopg2.connect('postgres://appuser:appuserpassword@free-tier.gcp-us-central1.cockroachlabs.cloud:26257/vital-cat-208.defaultdb?sslmode=require')
 	return conn
 
-app = Flask(__name__, template_folder = './template')
+
+app = Flask(__name__)
+
+CORS(app)
 
 @app.route('/')
 def index(name = None):
@@ -32,31 +36,33 @@ def index(name = None):
 @app.route('/signup', methods = ['POST'])
 def createacc():
 	if request.method == 'POST':
-		print("GOT USER")
-		req = request.get_json(force = True)
-		emailId  = req['email']
-		passWd = req['pass']
-		phoneNum = req['phoneNum']
-		firstN = req['firstName']
-		lastN = req['lastName']
-		stAdd = req['stAdd']
-		suiteNum = req['suiteNum']
-		city = req['city']
-		prov = req['province']
-		country = req['country']
-		cardnum = req['cardnum']
-		ccv = req['ccv']
-		cardexM = req['cardexM']
-		cardExY = req['cardExY']
-		accType = req['accType']
-		confirmPass = req['conPass']
+		try:
+			req = request.get_json(force = True)
+			emailId  = req[2]['value']
+			passWd = req[4]['value']
+			phoneNum = req[3]['value']
+			firstN = req[0]['value']
+			lastN = req[1]['value']
+			stAdd = req[6]['value']
+			suiteNum = req[7]['value']
+			city = req[8]['value']
+			prov = req[9]['value']
+			country = req[10]['value']
+			cardnum = int(req[11]['value'])
+			ccv = int(req[14]['value'])
+			cardexM = int(req[12]['value'])
+			cardExY = int(req[13]['value'])
+			accType = req[15]['value']
+			confirmPass = req[5]['value']
+		except (Exception):
+			return {'Type': "Error", 'content' : 'Please fill in all the forms'}
 		address = stAdd + ", " + suiteNum + ", " + city + ", " + prov + ", " + country
 		conn = get_db()
 		result = 0
 		if ccv < 100 or ccv > 999:
 			status = {'Type': "Error", 'content' : 'Invalid CCV'}
 			return status
-		if phoneNum.isnumeric() and len(phoneNum != 10) == False:
+		if not phoneNum.isnumeric() or len(phoneNum) != 10:
 			status = {'Type': "Error", 'content' : 'Invalid phone number format'}
 			return status
 		if (len(emailId) == 0 or len(passWd) == 0 or len(firstN) == 0 or len(lastN) == 0 or len(stAdd) == 0 or len(city) == 0):
@@ -69,7 +75,7 @@ def createacc():
 		cur.execute("SELECT * from Accounts WHERE emailId = %s", [emailId])
 		result = len(cur.fetchall())
 		if result == 0:
-			cur.execute("INSERT INTO Accounts (emailId, pass, phoneNum, firstName, lastName, Address, cardNum, ccv, cardExpMon, cardExpYr, accType, city, province, country) VALUES (%s, %s, %s, %s, %s, %s, %s, %d, %d, %d, %s, %s, %s, %s)")
+			cur.execute("INSERT INTO Accounts (emailId, pass, phoneNum, firstName, lastName, Address, cardNum, ccv, cardExpMon, cardExpYr, accType, city, province, country) VALUES (%s, %s, %s, %s, %s, %s, %d, %d, %d, %d, %s, %s, %s, %s)")
 		conn.commit()
 		print(cur.statusmessage)
 		status = {'Type' : "SQL" , 'content' : cur.statusmessage}
