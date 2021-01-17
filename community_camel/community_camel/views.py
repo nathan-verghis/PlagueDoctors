@@ -47,17 +47,24 @@ class SignupView(View):
 
     def post(self, request, *args, **kwargs):
         a = request.POST
-        '''account = Account(
+        account = Accounts(
             emailId=a["email"],
-            password=a[password],
+            password=a["password"],
             phoneNum=a["phone"],
             firstName=a["fname"],
             lastName=a["lname"],
-            dob
-        )'''
-        request.POST["fname"]
-        print(request.body.decode())
-        return HttpResponse("workd", status=200)
+            dob=a["dob"],
+            address=a["address"],
+            suite=a["unit"],
+            city=a["city"],
+            province=a["state"],
+            country=a["country"],
+            cardNum=a["cardnumber"],
+            ccv=a["ccv"],
+            cardExpMonth=a["expMonth"],
+            cardExpYear=a["expYear"]
+        )
+        return render(request, "index.html")
 
 
 @method_decorator(csrf_exempt, name='dispatch')
